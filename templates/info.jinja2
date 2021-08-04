@@ -1,0 +1,21 @@
+{% extends 'base.jinja2' %}
+
+{% block style %}
+  .truncate {
+  width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  }
+{% endblock %}
+
+{% block content %}
+  <header class="w3-container w3-green">
+    <h2><a href="{{ url_for('index') }}">{{ icon('bank') }} Info</a></h2>
+  </header>
+
+  <div class="w3-container w3-panel w3-white">
+    <pre>
+{{ item_json }}
+</pre>
+{% endblock content %}

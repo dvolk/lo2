@@ -1,0 +1,10 @@
+argh==0.26.2
+click==8.0.1
+Flask==2.0.1
+humanize==3.11.0
+itsdangerous==2.0.1
+Jinja2==3.0.1
+MarkupSafe==2.0.1
+mongoengine==0.23.1
+pymongo==3.12.0
+Werkzeug==2.0.1

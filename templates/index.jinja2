@@ -1,0 +1,87 @@
+{% extends 'base.jinja2' %}
+
+{% block style %}
+  .truncate {
+  width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  }
+{% endblock %}
+
+{% block content %}
+  <header class="w3-container w3-green">
+    <h2><a href="{{ url_for('index') }}">{{ icon('bank') }} Index</a></h2>
+  </header>
+
+  <div class="w3-container w3-panel w3-pale-green">
+    <h3>Add new url</h3>
+      <form method="POST">
+	<p>
+	  <label>Site URL:</label>
+	  <input class="w3-input" type="text" name="new_url" minlength=2/>
+	</p>
+	<p>
+	  <label>Optional arguments:</label>
+	  <select name="youtube_dl_optional_arg" class="w3-input">
+	    {% for arg in youtube_dl_optional_args %}
+	      <option value="{{ arg }}">{{ arg }}</option>
+	    {% endfor %}
+	  </select>
+	<p>
+	  <button class="w3-input w3-blue" type="Submit" name="Submit" value="Submit_add_url">{{ icon('plus') }} Add</button>
+	</p>
+      </form>
+  </div>
+  
+  <div class="w3-container w3-panel w3-white">
+    <h3>List of videos</h3>
+    <p>
+      <table class="w3-table w3-bordered" style="width: 100%; white-space: nowrap; table-layout: fixed;">
+	<thead>
+	  <th>Thumbnail</th>
+	  <th>URL</th>
+	  <th>Duration</th>
+	  <th>Added</th>
+	  <th>Last played</th>
+	  <th>Status</th>
+	</thead>
+	<tbody>
+	  {% for q in queue %}
+	    <tr>
+	      {% if q.thumbnail_url %}
+		<td><a href="{{ url_for('play', video_id=q.id) }}"><img style="height:54px;" src="{{ q.thumbnail_url }}"/></a></td>
+	      {% else %}
+		<td></td>
+	      {% endif %}
+	      {% if q.status == Status.OK %}
+		<td style="overflow: hidden; text-overflow: ellipsis"><a href="{{ url_for('info', queue_id=q.id) }}">{{ q.youtube_dl_json.get("title") }}</a></td>
+	      {% else %}
+		<td style="overflow: hidden; text-overflow: ellipsis">{{ q.url }}</td>
+	      {% endif %}
+	      {% if q.status == Status.OK %}
+		<td style="overflow: hidden; text-overflow: ellipsis">{{ nice_duration(q.youtube_dl_json.get("duration")) }}</td>
+	      {% else %}
+		<td></td>
+	      {% endif %}
+	      <td style="overflow: hidden; text-overflow: ellipsis">{{ nice_time(q.added_epochtime) }}</td>
+	      {% if q.lastplayed_epochtime %}
+		<td style="overflow: hidden; text-overflow: ellipsis">{{ nice_time(q.lastplayed_epochtime) }}</td>
+	      {% else %}
+		<td>Never</td>
+	      {% endif %}
+	      <td style="overflow: hidden; text-overflow: ellipsis">
+		{% if q.status == Status.OK and q.youtube_dl_json.get("channel_url") %}
+		  <a href="{{ q.youtube_dl_json.get("channel_url") }}">{{ q.status.name }}</a>
+		{% else %}
+		  {{ q.status.name }}
+		{% endif %}
+	      </td>
+	    </tr>
+	  {% endfor %}
+	</tbody>
+      </table>
+    </p>
+  </div>
+
+{% endblock %}
