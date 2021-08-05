@@ -16,38 +16,53 @@
 
   <div class="w3-container w3-panel w3-pale-green">
     <h3>Add new url</h3>
-      <form method="POST">
-	<p>
-	  <label>Site URL:</label>
-	  <input class="w3-input" type="text" name="new_url" minlength=2/>
-	</p>
-	<p>
-	  <label>Optional arguments:</label>
-	  <select name="youtube_dl_optional_arg" class="w3-input">
-	    {% for arg in youtube_dl_optional_args %}
-	      <option value="{{ arg }}">{{ arg }}</option>
-	    {% endfor %}
-	  </select>
-	<p>
-	  <button class="w3-input w3-blue" type="Submit" name="Submit" value="Submit_add_url">{{ icon('plus') }} Add</button>
-	</p>
-      </form>
+    <form method="POST">
+      <p>
+	<label>Site URL:</label>
+	<input class="w3-input" type="text" name="new_url" minlength=2/>
+      </p>
+      <p>
+	<label>Optional arguments:</label>
+	<select name="youtube_dl_optional_arg" class="w3-input">
+	  {% for arg in youtube_dl_optional_args %}
+	    <option value="{{ arg }}">{{ arg }}</option>
+	  {% endfor %}
+	</select>
+      <p>
+	<button class="w3-input w3-blue" type="Submit" name="Submit" value="Submit_add_url">{{ icon('plus') }} Add</button>
+      </p>
+    </form>
   </div>
-  
+
   <div class="w3-container w3-panel w3-white">
+    <p>
+      Pages:
+      {% for page in queue.iter_pages() %}
+	{% if page %}
+	  {% if page != queue.page %}
+            <a href="{{ url_for('index', page=page) }}">{{ page }}</a>
+	  {% else %}
+            <strong>{{ page }}</strong>
+	  {% endif %}
+	  &nbsp;
+	{% else %}
+	  <span class=ellipsis>…</span>
+	{% endif %}
+      {% endfor %}
+    </p>
     <h3>List of videos</h3>
     <p>
       <table class="w3-table w3-bordered" style="width: 100%; white-space: nowrap; table-layout: fixed;">
 	<thead>
 	  <th>Thumbnail</th>
-	  <th>URL</th>
+	  <th>URL/Title</th>
 	  <th>Duration</th>
 	  <th>Added</th>
 	  <th>Last played</th>
 	  <th>Status</th>
 	</thead>
 	<tbody>
-	  {% for q in queue %}
+	  {% for q in queue.items %}
 	    <tr>
 	      {% if q.thumbnail_url %}
 		<td><a href="{{ url_for('play', video_id=q.id) }}"><img style="height:54px;" src="{{ q.thumbnail_url }}"/></a></td>

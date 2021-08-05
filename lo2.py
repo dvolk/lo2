@@ -11,10 +11,13 @@ import shlex
 
 import argh
 import flask
-import mongoengine
+import flask_mongoengine as fm
 import humanize
 
-mongoengine.connect("lo2-1")
+APP = flask.Flask(__name__)
+APP.secret_key = "secret"
+APP.config["MONGODB_DB"] = "lo2-1"
+db = fm.MongoEngine(APP)
 
 
 class Status(Enum):
@@ -24,15 +27,15 @@ class Status(Enum):
     ERROR = "error"
 
 
-class Queue(mongoengine.Document):
-    url = mongoengine.StringField()
-    added_epochtime = mongoengine.IntField()
-    youtube_dl_optional_arg = mongoengine.StringField()
-    finished_epochtime = mongoengine.IntField()
-    lastplayed_epochtime = mongoengine.IntField()
-    status = mongoengine.EnumField(Status, default=Status.QUEUED)
-    thumbnail_url = mongoengine.StringField()
-    youtube_dl_json = mongoengine.DynamicField()
+class Queue(db.Document):
+    url = db.StringField()
+    added_epochtime = db.IntField()
+    youtube_dl_optional_arg = db.StringField()
+    finished_epochtime = db.IntField()
+    lastplayed_epochtime = db.IntField()
+    status = db.EnumField(Status, default=Status.QUEUED)
+    thumbnail_url = db.StringField()
+    youtube_dl_json = db.DynamicField()
 
 
 def or_404(arg):
@@ -99,9 +102,6 @@ def add_url_from_xclip():
     add_url_to_queue(url)
 
 
-APP = flask.Flask(__name__)
-
-
 @APP.context_processor
 def inject_globals():
     return {
@@ -151,6 +151,7 @@ def make_thumbnail(f):
 @APP.route("/", methods=["GET", "POST"])
 def index():
     time_now = int(time.time())
+    page = int(flask.request.args.get("page", 1))
     if flask.request.method == "GET":
 
         def nice_duration(t):
@@ -161,7 +162,9 @@ def index():
                 dt.timedelta(seconds=(time_now - t2))
             ).capitalize()
 
-        queue = Queue.objects.order_by("-added_epochtime")
+        queue = Queue.objects.order_by("-added_epochtime").paginate(
+            page=page, per_page=50
+        )
         return flask.render_template(
             "index.jinja2",
             title="lo2",
@@ -170,6 +173,7 @@ def index():
             youtube_dl_optional_args=youtube_dl_optional_args,
             nice_time=nice_time,
             nice_duration=nice_duration,
+            page=page,
         )
     if flask.request.method == "POST":
         if flask.request.form.get("Submit") == "Submit_add_url":
