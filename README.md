@@ -28,3 +28,5 @@ No further database configuration is needed.
 ## Running
 
     python3 lo2.py
+
+Open browser at http://127.0.0.1:5555/
