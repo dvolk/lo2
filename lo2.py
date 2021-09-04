@@ -36,6 +36,7 @@ class Queue(db.Document):
     status = db.EnumField(Status, default=Status.QUEUED)
     thumbnail_url = db.StringField()
     youtube_dl_json = db.DynamicField()
+    meta = {"indexes": ["added_epochtime"]}
 
 
 def or_404(arg):
