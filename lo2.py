@@ -166,6 +166,7 @@ def index():
         queue = Queue.objects.order_by("-added_epochtime").paginate(
             page=page, per_page=50
         )
+        queue_count = Queue.objects.count()
         return flask.render_template(
             "index.jinja2",
             title="lo2",
@@ -175,6 +176,7 @@ def index():
             nice_time=nice_time,
             nice_duration=nice_duration,
             page=page,
+            queue_count=queue_count,
         )
     if flask.request.method == "POST":
         if flask.request.form.get("Submit") == "Submit_add_url":

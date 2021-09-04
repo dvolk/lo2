@@ -35,6 +35,7 @@
   </div>
 
   <div class="w3-container w3-panel w3-white">
+    <h3>List of videos (total {{ queue_count }}):</h3>
     <p>
       Pages:
       {% for page in queue.iter_pages() %}
@@ -50,7 +51,6 @@
 	{% endif %}
       {% endfor %}
     </p>
-    <h3>List of videos</h3>
     <p>
       <table class="w3-table w3-bordered" style="width: 100%; white-space: nowrap; table-layout: fixed;">
 	<thead>
