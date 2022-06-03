@@ -17,6 +17,8 @@ You will need mongodb:
 
     apt install mongodb-server
 
+Mongodb isn't distributed by some later linux distributions, so you will need to download and install the MongoDB Community Server from mongodb.com.
+
 No further database configuration is needed.
 
     git clone https://gitea.mmmoxford.uk/dvolk/lo2
@@ -24,9 +26,17 @@ No further database configuration is needed.
     virtualenv env
     source env/bin/activate
     pip3 install -r requirements.txt
+    mkdir static
+
+Now install yt-dl from https://github.com/yt-dlp/yt-dlp/releases/
+
+rename the binary to youtube-dl and mark it as executable:
+
+    mv yt-dlp youtube-dl
+    chmod a+x youtube-dl
 
 ## Running
 
-    python3 lo2.py
+    python3 lo2.py serve
 
 Open browser at http://127.0.0.1:5555/

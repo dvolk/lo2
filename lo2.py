@@ -53,7 +53,7 @@ try:
     cmd = "git describe --tags --always --dirty"
     version = subprocess.check_output(shlex.split(cmd)).decode().strip()
 except:
-    version = None
+    version = ""
 
 
 youtube_dl_optional_args = ["", "-f 18", "-f 22", "--audio-format best -f 18"]
@@ -128,7 +128,7 @@ def play(video_id):
     return flask.redirect(flask.url_for("index"))
 
 
-def make_thumbnail(f):
+def make_thumbnail(f: str):
     if not f:
         return ""
     f = Path(f)
@@ -200,7 +200,7 @@ def info(queue_id):
     return flask.render_template("info.jinja2", item_json=item_json)
 
 
-def main():
+def serve():
     for q in Queue.objects:
         if q.status == Status.RUNNING:
             q.status = Status.QUEUED
@@ -211,4 +211,4 @@ def main():
 
 
 if __name__ == "__main__":
-    argh.dispatch_command(main)
+    argh.dispatch_commands([serve, make_thumbnail])
