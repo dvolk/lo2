@@ -14,6 +14,8 @@ import flask
 import flask_mongoengine as fm
 import humanize
 
+logging.basicConfig(level=logging.DEBUG)
+
 APP = flask.Flask(__name__)
 APP.secret_key = "secret"
 APP.config["MONGODB_DB"] = "lo2-1"
@@ -60,7 +62,7 @@ youtube_dl_optional_args = ["", "-f 18", "-f 22", "--audio-format best -f 18"]
 
 
 def run_youtube_dl(url, opt):
-    cmd = f"./youtube-dl {opt} --ignore-errors -o './%(uploader)s_%(uploader_id)s/%(title)s_%(id)s.%(ext)s' --write-description --write-info-json --write-annotations --write-all-thumbnails --write-pages --restrict-filenames --all-subs --print-json {url}"
+    cmd = f"./youtube-dl {opt} --ignore-errors -o './%(uploader)s_%(uploader_id)s/%(title)s_%(id)s.%(ext)s' --write-description --write-info-json --write-annotations --write-all-thumbnails --restrict-filenames --all-subs --print-json {url}"
     logging.info(cmd)
     try:
         out = subprocess.check_output(cmd, shell=True).decode()
@@ -113,7 +115,7 @@ def inject_globals():
 
 @APP.route("/play/<video_id>")
 def play(video_id):
-    vid = Queue.objects(id=video_id).first()
+    vid = Queue.objects(id=video_id).first_or_404()
     print(vid)
     filename = vid.youtube_dl_json.get("_filename")
     print(filename)
@@ -195,9 +197,16 @@ def index():
 @APP.route("/info/<queue_id>")
 def info(queue_id):
     item_json = json.dumps(
-        json.loads(Queue.objects(id=queue_id).first().to_json()), indent=4
+        json.loads(Queue.objects(id=queue_id).first_or_404().to_json()), indent=4
     )
-    return flask.render_template("info.jinja2", item_json=item_json)
+    return flask.render_template("info.jinja2", queue_id=queue_id, item_json=item_json)
+
+
+@APP.route("/delete/<queue_id>")
+def delete(queue_id):
+    q = Queue.objects(id=queue_id).first_or_404()
+    q.delete()
+    return flask.redirect(flask.url_for("index"))
 
 
 def serve():
@@ -205,6 +214,9 @@ def serve():
         if q.status == Status.RUNNING:
             q.status = Status.QUEUED
             q.save()
+        if q.status == Status.ERROR:
+            logging.info(f"deleting entry with url: {q.url} due to error state")
+            q.delete()
 
     threading.Thread(target=downloader).start()
     APP.run(port=5555)

@@ -15,7 +15,11 @@
   </header>
 
   <div class="w3-container w3-panel w3-white">
-    <pre>
+
+<pre>
 {{ item_json }}
 </pre>
+    <p>
+      <a href="{{ url_for('delete', queue_id=queue_id) }}" class="w3-btn w3-red">{{ icon('trash') }} Delete</button></a>
+</p>
 {% endblock content %}
