@@ -116,39 +116,47 @@ def inject_globals():
 @APP.route("/play/<video_id>")
 def play(video_id):
     vid = Queue.objects(id=video_id).first_or_404()
-    print(vid)
+    logging.info(vid)
     filename = vid.youtube_dl_json.get("_filename")
-    print(filename)
+    logging.info(filename)
     if not Path(filename).is_file():
         filename = str(Path(filename).with_suffix(".mkv"))
         if not Path(filename).is_file():
             return flask.abort(404)
-    print(f"playing {filename}")
+    logging.info(f"playing {filename}")
     os.system(f"nohup mpv {filename} &")
     vid.lastplayed_epochtime = int(time.time())
     vid.save()
     return flask.redirect(flask.url_for("index"))
 
 
-def make_thumbnail(f: str):
-    if not f:
+def make_thumbnail(fp: str):
+    if not fp:
         return ""
-    f = Path(f)
+    f = Path(fp)
     if not f.is_file():
         if not f.with_suffix(".mkv").is_file():
             return ""
+    cmd = ""
+    thumb_file = ""
+
     thumb_try1 = f.with_suffix(".jpg")
-    print(f"1: {thumb_try1}")
     if Path(thumb_try1).is_file():
-        print("OK")
-        os.system(f"ln -s ../{thumb_try1} static/{thumb_try1.name}")
-        return f"static/{thumb_try1.name}"
+        cmd = f"ln -s ../{thumb_try1} static/{thumb_try1.name}"
+        thumb_file = f"static/{thumb_try1.name}"
     thumb_try2 = Path(str(f) + "_0.jpg")
-    print(f"2: {thumb_try2}")
     if Path(thumb_try2).is_file():
-        print("OK")
         os.system(f"ln -s ../{thumb_try2} static/{thumb_try2.name}")
-        return f"static/{thumb_try2.name}"
+        thumb_file = f"static/{thumb_try2.name}"
+    thumb_try3 = f.with_suffix(".0.jpg")
+    if Path(thumb_try3).is_file():
+        cmd = f"ln -s ../{thumb_try3} static/{thumb_try3.name}"
+        thumb_file = f"static/{thumb_try3.name}"
+
+    if cmd:
+        logging.info(cmd)
+        os.system(cmd)
+    return thumb_file
 
 
 @APP.route("/", methods=["GET", "POST"])
