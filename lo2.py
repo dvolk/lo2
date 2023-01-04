@@ -83,10 +83,11 @@ def downloader():
             if r:
                 q.status = Status.OK
                 q.youtube_dl_json = r
+                th = ""
                 if r.get("_filename"):
                     th = make_thumbnail(r.get("_filename"))
-                else:
-                    th = ""
+                elif r.get("filename"):
+                    th = make_thumbnail(r.get("filename"))
                 q.thumbnail_url = th
             else:
                 q.status = Status.ERROR
@@ -157,6 +158,14 @@ def make_thumbnail(fp: str):
         logging.info(cmd)
         os.system(cmd)
     return thumb_file
+
+
+def fix_thumbnails():
+    for q in Queue.objects(
+        thumbnail_url__exists=False, youtube_dl_json__filename__exists=True
+    ):
+        q.thumbnail_url = make_thumbnail(q.youtube_dl_json["filename"])
+        q.save()
 
 
 @APP.route("/", methods=["GET", "POST"])
@@ -231,4 +240,4 @@ def serve():
 
 
 if __name__ == "__main__":
-    argh.dispatch_commands([serve, make_thumbnail])
+    argh.dispatch_commands([serve, make_thumbnail, fix_thumbnails])
