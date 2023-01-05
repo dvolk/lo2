@@ -137,6 +137,7 @@ def make_thumbnail(fp: str):
     f = Path(fp)
     if not f.is_file():
         if not f.with_suffix(".mkv").is_file():
+            logging.warning("can't find file")
             return ""
     cmd = ""
     thumb_file = ""
@@ -157,15 +158,23 @@ def make_thumbnail(fp: str):
     if cmd:
         logging.info(cmd)
         os.system(cmd)
+    else:
+        logging.warning("couldn't find thumbnail file")
     return thumb_file
 
 
 def fix_thumbnails():
-    for q in Queue.objects(
-        thumbnail_url__exists=False, youtube_dl_json__filename__exists=True
-    ):
+    for q in Queue.objects(youtube_dl_json__filename__exists=True):
         q.thumbnail_url = make_thumbnail(q.youtube_dl_json["filename"])
         q.save()
+
+
+def remove_disk_missing():
+    """Remove database entries that aren't on disk any more."""
+    for q in Queue.objects(youtube_dl_json__filename__exists=True):
+        f = Path(q.youtube_dl_json["filename"])
+        if not f.parent.is_dir():
+            q.delete()
 
 
 @APP.route("/", methods=["GET", "POST"])
@@ -240,4 +249,4 @@ def serve():
 
 
 if __name__ == "__main__":
-    argh.dispatch_commands([serve, make_thumbnail, fix_thumbnails])
+    argh.dispatch_commands([serve, make_thumbnail, fix_thumbnails, remove_disk_missing])
