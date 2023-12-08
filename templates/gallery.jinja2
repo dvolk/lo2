@@ -1,0 +1,47 @@
+{% extends 'base.jinja2' %}
+
+{% block style %}
+    .masonry {
+        column-count: 3;
+        column-gap: 1em;
+    }
+
+    /* Responsive layout - makes the menu and the content stack on top of each other */
+    @media (max-width:600px) {
+        .masonry {
+            column-count: 1;
+        }
+    }
+
+    @media (min-width:601px) and (max-width:900px) {
+        .masonry {
+            column-count: 2;
+        }
+    }
+
+    .masonry img {
+        width: 100%;
+    }
+
+    .masonry a {
+        display: block;
+        margin-bottom: 1em;
+        break-inside: avoid;
+    }
+{% endblock %}
+
+{% block content %}
+
+  <div style="margin-top: 1em;" class="row-fluid">
+    <div class="masonry">
+
+      {% for q in queue %}
+        {% if q.thumbnail_url %}
+          <a target="_blank" href="{{ url_for('play', video_id=q.id) }}"><img src="{{ q.thumbnail_url }}"/></a>
+        {% endif %}
+      {% endfor %}
+
+    </div>
+  </div>
+
+{% endblock %}

@@ -17,6 +17,7 @@ import humanize
 logging.basicConfig(level=logging.DEBUG)
 
 APP = flask.Flask(__name__)
+APP.config["SEND_FILE_MAX_AGE_DEFAULT"] = dt.timedelta(hours=24)
 APP.secret_key = "secret"
 APP.config["MONGODB_DB"] = "lo2-1"
 db = fm.MongoEngine(APP)
@@ -125,10 +126,18 @@ def play(video_id):
         if not Path(filename).is_file():
             return flask.abort(404)
     logging.info(f"playing {filename}")
-    os.system(f"nohup mpv {filename} &")
+    os.system(f"nohup mpv --volume=30 --mute {filename} &")
     vid.lastplayed_epochtime = int(time.time())
     vid.save()
-    return flask.redirect(flask.url_for("index"))
+    return flask.Response("""
+    <html>
+        <body>
+            <script type="text/javascript">
+                window.close();
+            </script>
+        </body>
+    </html>
+    """, mimetype='text/html')
 
 
 def make_thumbnail(fp: str):
@@ -154,6 +163,10 @@ def make_thumbnail(fp: str):
     if Path(thumb_try3).is_file():
         cmd = f"ln -s ../{thumb_try3} static/{thumb_try3.name}"
         thumb_file = f"static/{thumb_try3.name}"
+    thumb_try4 = f.with_suffix(".webp")
+    if Path(thumb_try4).is_file():
+        cmd = f"ln -s ../{thumb_try4} static/{thumb_try4.name}"
+        thumb_file = f"static/{thumb_try4.name}"
 
     if cmd:
         logging.info(cmd)
@@ -177,6 +190,16 @@ def remove_disk_missing():
             q.delete()
 
 
+@APP.route("/collage", methods=["GET", "POST"])
+def collage():
+    queue = Queue.objects.order_by("-added_epochtime").all()
+    return flask.render_template(
+        "gallery.jinja2",
+        title="lo2",
+        queue=queue,
+    )
+
+
 @APP.route("/", methods=["GET", "POST"])
 def index():
     time_now = int(time.time())
@@ -192,7 +215,7 @@ def index():
             ).capitalize()
 
         queue = Queue.objects.order_by("-added_epochtime").paginate(
-            page=page, per_page=50
+            page=page, per_page=1000
         )
         queue_count = Queue.objects.count()
         return flask.render_template(
@@ -238,7 +261,7 @@ def delete(queue_id):
 def serve():
     for q in Queue.objects:
         if q.status == Status.RUNNING:
-            q.status = Status.QUEUED
+            q.status = Status.ERROR
             q.save()
         if q.status == Status.ERROR:
             logging.info(f"deleting entry with url: {q.url} due to error state")
