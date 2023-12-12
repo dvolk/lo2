@@ -126,10 +126,13 @@ def play(video_id):
         if not Path(filename).is_file():
             return flask.abort(404)
     logging.info(f"playing {filename}")
-    os.system(f"nohup mpv --volume=30 --mute {filename} &")
+    cmd = f"nohup mpv --volume=30 --mute {filename} &"
+    logging.info(cmd)
+    os.system(cmd)
     vid.lastplayed_epochtime = int(time.time())
     vid.save()
-    return flask.Response("""
+    return flask.Response(
+        """
     <html>
         <body>
             <script type="text/javascript">
@@ -137,7 +140,9 @@ def play(video_id):
             </script>
         </body>
     </html>
-    """, mimetype='text/html')
+    """,
+        mimetype="text/html",
+    )
 
 
 def make_thumbnail(fp: str):
@@ -186,8 +191,12 @@ def remove_disk_missing():
     """Remove database entries that aren't on disk any more."""
     for q in Queue.objects(youtube_dl_json__filename__exists=True):
         f = Path(q.youtube_dl_json["filename"])
+        print(f)
         if not f.parent.is_dir():
             q.delete()
+        else:
+            if not f.is_file():
+                q.delete()
 
 
 @APP.route("/collage", methods=["GET", "POST"])
@@ -258,6 +267,42 @@ def delete(queue_id):
     return flask.redirect(flask.url_for("index"))
 
 
+def enqueue_from_file(filename):
+    import pathlib
+
+    links = pathlib.Path(filename).read_text().split("\n")
+    for link in links:
+        if not link or not link.strip():
+            continue
+        if Queue.objects(url=link).first():
+            print(f"already exists: {link}")
+            continue
+
+        new_item = Queue(
+            url=link,
+            status=Status.QUEUED,
+            added_epochtime=int(time.time()),
+            youtube_dl_optional_arg="",
+        )
+        new_item.save()
+
+
+def show_urls():
+    for q in Queue.objects:
+        print(q.url)
+
+
+def dedupe():
+    seen = []
+    for q in Queue.objects().order_by("-id"):
+        filename = q.youtube_dl_json["filename"]
+        if filename in seen:
+            print("deleting")
+            q.delete()
+        else:
+            seen.append(filename)
+
+
 def serve():
     for q in Queue.objects:
         if q.status == Status.RUNNING:
@@ -268,8 +313,18 @@ def serve():
             q.delete()
 
     threading.Thread(target=downloader).start()
-    APP.run(port=5555)
+    APP.run(port=5555, debug=True)
 
 
 if __name__ == "__main__":
-    argh.dispatch_commands([serve, make_thumbnail, fix_thumbnails, remove_disk_missing])
+    argh.dispatch_commands(
+        [
+            serve,
+            make_thumbnail,
+            fix_thumbnails,
+            remove_disk_missing,
+            enqueue_from_file,
+            show_urls,
+            dedupe,
+        ]
+    )

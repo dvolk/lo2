@@ -1,11 +1,10 @@
 {% extends 'base.jinja2' %}
 
 {% block style %}
-  * {
+  body {
   font-family: Roboto !important;
   }
   .truncate {
-  width: 250px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -22,28 +21,34 @@
   </header>
 
   <div class="w3-container w3-panel w3-pale-green">
-    <h3>Add new url</h3>
-    <form method="POST">
-      <p>
-        <label>Site URL:</label>
-        <input class="w3-input" type="text" name="new_url" minlength=2/>
-      </p>
-      <p>
-        <label>Optional arguments:</label>
-        <select name="youtube_dl_optional_arg" class="w3-input">
-          {% for arg in youtube_dl_optional_args %}
-            <option value="{{ arg }}">{{ arg }}</option>
-          {% endfor %}
-        </select>
-      <p>
-        <button class="w3-input w3-blue" type="Submit" name="Submit" value="Submit_add_url">{{ icon('plus') }} Add</button>
-      </p>
-    </form>
+    <center>
+      <h3>Add new url</h3>
+    </center>
+    <p>
+      <form method="POST">
+        <div class="w3-third">
+          <input style="height: 40px;" class="w3-input" type="text" name="new_url" minlength=2/>
+        </div>
+        <div class="w3-third">
+          <select style="height: 40px;" name="youtube_dl_optional_arg" class="w3-input">
+            {% for arg in youtube_dl_optional_args %}
+              <option value="{{ arg }}">{{ arg }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="w3-third">
+          <button style="height: 40px;" class="w3-input w3-blue" type="Submit" name="Submit" value="Submit_add_url">{{ icon('plus') }} Add</button>
+        </div>
+      </form>
+      <br/>
+      <br/>
+    </p>
   </div>
 
   <div class="w3-container w3-panel w3-white">
-    <h3>List of videos (total {{ queue_count }}):</h3>
-    <p>
+
+    <div class="w3-panel">
+      <h3>List of videos (total {{ queue_count }}):</h3>
       Pages:
       {% for page in queue.iter_pages() %}
         {% if page %}
@@ -57,53 +62,65 @@
           <span class=ellipsis>…</span>
         {% endif %}
       {% endfor %}
-    </p>
-    <p>
-      <table class="w3-table w3-bordered" style="width: 100%; white-space: nowrap;">
-        <tbody>
-          {% for q in queue.items %}
-            <tr>
-	      <td style="max-width: 300;">
-		{% if q.thumbnail_url %}
-                  <a target="_blank" href="{{ url_for('play', video_id=q.id) }}"><img style="height:154px;" src="{{ q.thumbnail_url }}"/></a>
-		{% else %}
-                {% endif %}
-	      </td>
-	      <td style="text-align: left; overflow: hidden; text-overflow: ellipsis">
-		<h3>
-		  {% if q.status == Status.OK %}
-                  <a href="{{ url_for('info', queue_id=q.id) }}">{{ q.youtube_dl_json.get("title") }}</a>
-		{% else %}
-                  {{ q.url }}
-		{% endif %}
-		</h3>
-		<br/>
-		Duration:
-		{% if q.status == Status.OK %}
-                  {{ nice_duration(q.youtube_dl_json.get("duration")) }}
-		{% else %}
-		{% endif %}
-		<br/>
-		Last played:
-		{{ nice_time(q.added_epochtime) }}
-		{% if q.lastplayed_epochtime %}
-                  {{ nice_time(q.lastplayed_epochtime) }}
-		{% else %}
-                  Never
-		{% endif %}
-		<br/>
-		Status:
-                {% if q.status == Status.OK and q.youtube_dl_json.get("channel_url") %}
-                  <a href="{{ q.youtube_dl_json.get("channel_url") }}">{{ q.status.name }}</a>
-                {% else %}
-                  {{ q.status.name }}
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </p>
+    </div>
+
+
+
+
+    {% for q in queue.items %}
+
+      <div style="align-items: center; display: flex">
+        <div>
+
+          {% if q.thumbnail_url %}
+            <a target="_blank" href="{{ url_for('play', video_id=q.id) }}">
+              <img style="border-radius: 20px; height:200px;" src="{{ q.thumbnail_url }}"/>
+            </a>
+          {% endif %}
+
+        </div>
+        <div style="padding-left: 20px; flex-grow: 1">
+
+          {% if q.status == Status.OK %}
+            <span class="truncate">
+              <a style="word-spacing: 2px; font-size: 1.8em; font-weight: 700;" target="_blank" href="{{ url_for('play', video_id=q.id) }}">
+                {{ q.youtube_dl_json.get("title")|capitalize }}
+              </a>
+              <br/>
+              <a href="{{ q.url }}">{{ q.url }}</a>
+            </span>
+          {% else %}
+            <span class="truncate">
+              {{ q.url }}
+            </span>
+          {% endif %}
+
+          <br/>
+          <br/>
+          Added: {{ nice_time(q.added_epochtime) }}
+
+          {% if q.status == Status.OK %}
+            <br/>
+            Duration: {{ nice_duration(q.youtube_dl_json.get("duration")) }}
+          {% endif %}
+
+          <br/>
+          Status: {{ q.status.name }}
+
+          {% if q.status == Status.OK and q.youtube_dl_json.get("channel_url") %}
+            <br/>
+            Channel: <a href="{{ q.youtube_dl_json.get("channel_url") }}">{{ q.youtube_dl_json.get("channel_url") }}</a>
+          {% endif %}
+
+          {% if q.status == Status.OK %}
+            <br/>
+            <a href="{{ url_for('info', queue_id=q.id) }}">JSON dump</a>
+          {% endif %}
+
+        </div>
+      </div>
+      <br/>
+    {% endfor %}
 
     <p>
       Pages:
